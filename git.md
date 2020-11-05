@@ -209,7 +209,7 @@ $ git switch master
 
 
 
-![](./image/202011051711.png)
+![](./image/gitimage/202011051711.png)
 
 #### 分支管理策略
 
