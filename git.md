@@ -69,7 +69,7 @@ $ git reflog
 19f9fe9 (HEAD -> master) HEAD@{2}: commit: one
 96eeddb HEAD@{3}: commit (initial): xxx
 ```
-![](D:\Data\image\image-20201022160202290.png)
+![](./image/gitimage/image-20201022160202290.png)
 #### 工作区和暂存区
 **查看状态**
 ```bash
@@ -103,7 +103,7 @@ index 76d770f..a9c5755 100644
 -Git tracks changes.
 +Git tracks changes of files.
 ```
-![](D:\Data\image\202010221639.png)
+![](./image/gitimage/202010221639.png)
 
 #### 撤销修改
 **丢弃工作区的修改**
@@ -121,7 +121,7 @@ $ git reset HEAD readme.txt
 Unstaged changes after reset:
 M	readme.txt
 ```
-![](D:\Data\image\微信图片_20201022174638.png)
+![](./image/gitimage/微信图片_20201022174638.png)
 #### 删除文件
 **从版本库中删除文件**
 ```bash
@@ -157,7 +157,8 @@ To github.com:michaelliao/learngit.git
 Branch 'master' set up to track remote branch 'master' from 'origin'.
 ```
 可能有SSH警告！！！
-![](D:\Data\image\202010231043.png)
+![](./image/gitimage/202010231043.png)
+
 #### 从远程库克隆
 先在GitHub创建一个仓库，然后在本地克隆：
 ```bahs
@@ -167,7 +168,7 @@ remote: Counting objects: 3, done.
 remote: Total 3 (delta 0), reused 0 (delta 0), pack-reused 3
 Receiving objects: 100% (3/3), done.
 ```
-![](D:\Data\image\20201023105212.png)
+![](./image/gitimage/20201023105212.png)
 ### 分支管理
 #### 创建与合并分支
 **首先，我们创建dev分支，然后切换到dev分支：**
@@ -202,7 +203,7 @@ $ git switch -c dev
 # 直接切换到已有的master分支，可以使用：
 $ git switch master
 ```
-![](D:\Data\image\QQ截图20201023112623.png)
+![](./image/gitimage/QQ截图20201023112623.png)
 #### 解决冲突
 
 
