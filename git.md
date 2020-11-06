@@ -249,6 +249,29 @@ Git用<<<<<<<，=======，>>>>>>>标记出不同分支的内容
 
 #### 分支管理策略
 
+合并`dev`分支，请注意`--no-ff`参数，表示禁用`Fast forward`
+
+因为本次合并要创建一个新的commit，所以加上`-m`参数，把commit描述写进去。
+
+```bash
+$ git merge --no-ff -m "merge with no-ff" dev
+Merge made by the 'recursive' strategy.
+ readme.txt | 1 +
+ 1 file changed, 1 insertion(+)
+```
+
+**分支策略**
+
+在实际开发中，我们应该按照几个基本原则进行分支管理：
+首先，`master`分支应该是非常稳定的，也就是仅用来发布新版本，平时不能在上面干活；
+那在哪干活呢？干活都在`dev`分支上，也就是说，`dev`分支是不稳定的，到某个时候，比如1.0版本发布时，再把`dev`分支合并到`master`上，在`master`分支发布1.0版本；
+你和你的小伙伴们每个人都在`dev`分支上干活，每个人都有自己的分支，时不时地往`dev`分支上合并就可以了。
+
+所以，团队合作的分支看起来就像这样：
+![](.\image\gitimage\image-20201106102514871.png)
+
+![](.\image\gitimage\20201106.png)
+
 #### Bug分支
 
 #### Feature分支
