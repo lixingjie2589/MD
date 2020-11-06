@@ -274,6 +274,120 @@ Merge made by the 'recursive' strategy.
 
 #### Bug分支
 
+当需要修改一个bug时，在`dev`上进行的工作还没有提交
+
+```bash
+$ git status
+On branch dev
+Changes to be committed:
+  (use "git reset HEAD <file>..." to unstage)
+
+	new file:   hello.py
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	modified:   readme.txt
+```
+
+如果工作只进行到一半，还没法提交，bug比较急，Git还提供了一个`stash`功能，可以把当前工作现场“储藏”起来，等以后恢复现场后继续工作：
+
+```bash
+$ git stash
+Saved working directory and index state WIP on dev: f52c633 add merge
+```
+
+在用`git status`查看工作区，就是干净的
+
+首先确定要在哪个分支上修复bug，假定需要在`master`分支上修复，就从`master`创建临时分支：
+
+```bash
+$ git checkout master
+Switched to branch 'master'
+Your branch is ahead of 'origin/master' by 6 commits.
+  (use "git push" to publish your local commits)
+
+$ git checkout -b issue-101
+Switched to a new branch 'issue-101'
+```
+
+修改后提交
+
+```bash
+$ git add readme.txt 
+$ git commit -m "fix bug 101"
+[issue-101 4c805e2] fix bug 101
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+```
+
+修复完成后，切换到`master`分支，并完成合并，最后删除`issue-101`分支：
+
+```bash
+$ git switch master
+Switched to branch 'master'
+Your branch is ahead of 'origin/master' by 6 commits.
+  (use "git push" to publish your local commits)
+
+$ git merge --no-ff -m "merged bug fix 101" issue-101
+Merge made by the 'recursive' strategy.
+ readme.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+```
+
+切换到`dev`分支，查看工作区时干净的，用`git stash list`命令查看：
+
+```bash
+$ git stash list
+stash@{0}: WIP on dev: f52c633 add merge
+```
+
+工作现场还在，Git把stash内容存在某个地方了，但是需要恢复一下，有两个办法：
+
+一是用`git stash apply`恢复，但是恢复后，stash内容并不删除，你需要用`git stash drop`来删除；
+
+另一种方式是用`git stash pop`，恢复的同时把stash内容也删了：
+
+```bash
+$ git stash pop
+On branch dev
+Changes to be committed:
+  (use "git reset HEAD <file>..." to unstage)
+
+	new file:   hello.py
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	modified:   readme.txt
+
+Dropped refs/stash@{0} (5d677e2ee266f39ea296182fb2354265b91b3b2a)
+```
+
+再用`git stash list`查看，就看不到任何stash内容了
+
+你可以多次stash，恢复的时候，先用`git stash list`查看，然后恢复指定的stash，用命令：
+
+```bash
+$ git stash apply stash@{0}
+```
+
+到dev分支工作并把主分支修改好的bug提交过来，为了方便操作，Git专门提供了一个`cherry-pick`命令，让我们能复制一个特定的提交到当前分支：
+
+```bash
+$ git branch
+* dev
+  master
+$ git cherry-pick 4c805e2
+[master 1d4b803] fix bug 101
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+```
+
+也可以在dev分支 修改bug，避免上面的操作。
+
+![image-20201106142312514](.\image\gitimage\image-20201106142312514.png)
+
 #### Feature分支
 
 #### 多人协作
