@@ -205,11 +205,46 @@ $ git switch master
 ```
 ![](./image/gitimage/QQ截图20201023112623.png)
 #### 解决冲突
+**合并**
 
+```bash
+$ git merge feature1
+Auto-merging readme.txt
+CONFLICT (content): Merge conflict in readme.txt
+Automatic merge failed; fix conflicts and then commit the result.
+```
+Git告诉我们，readme.txt文件存在冲突，必须手动解决冲突后再提交。git status也可以告诉我们冲突的文件：
+```bash
+$ git status
+On branch master
+Your branch is ahead of 'origin/master' by 2 commits.
+  (use "git push" to publish your local commits)
 
+You have unmerged paths.
+  (fix conflicts and run "git commit")
+  (use "git merge --abort" to abort the merge)
 
+Unmerged paths:
+  (use "git add <file>..." to mark resolution)
 
+	both modified:   readme.txt
 
+no changes added to commit (use "git add" and/or "git commit -a")
+```
+我们可以直接查看readme.txt的内容：
+```bahs
+Git is a distributed version control system.
+Git is free software distributed under the GPL.
+Git has a mutable index called stage.
+Git tracks changes of files.
+<<<<<<< HEAD
+Creating a new branch is quick & simple.
+=======
+Creating a new branch is quick AND simple.
+>>>>>>> feature1
+```
+Git用<<<<<<<，=======，>>>>>>>标记出不同分支的内容
+手动修改文件的冲突再提交就完成了！
 ![](./image/gitimage/202011051711.png)
 
 #### 分支管理策略
@@ -221,6 +256,3 @@ $ git switch master
 #### 多人协作
 
 #### Rebase
-```
-
-```
