@@ -1,4 +1,5 @@
 # Git   开淦
+
 ### Git简介
 #### 安装Git
 **Linux安装Git**
@@ -21,6 +22,7 @@ $ git init
 Initialized empty Git repository in /Users/michael/learngit/.git/
 ```
 **把文件添加到版本库**
+
 ``` bash
 # 第一步，用命令git add告诉Git，把文件添加到仓库：
 $ git add readme.txt
@@ -124,6 +126,7 @@ M	readme.txt
 ![](./image/gitimage/微信图片_20201022174638.png)
 #### 删除文件
 **从版本库中删除文件**
+
 ```bash
 $ git rm test.txt
 rm 'test.txt'
@@ -188,7 +191,14 @@ $ git branch
 * dev
   master
 ```
+删除远程分支
+
+```bash
+git push origin --delete 分支名
+```
+
 **git merge命令用于合并指定分支到当前分支**
+
 ```bash
 $ git merge dev
 Updating d46f35e..b17d20e
