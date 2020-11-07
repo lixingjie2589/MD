@@ -612,6 +612,8 @@ $ cat .git/config
 
 而当前用户的Git配置文件放在用户主目录下的一个隐藏文件`.gitconfig`中：
 
+Windows用户目录为`C:\用户\`
+
 ```bash
 $ cat .gitconfig
 [alias]
