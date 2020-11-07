@@ -514,3 +514,18 @@ To github.com:michaelliao/learngit.git
 ```
 
 ![image-20201107145906461](.\image\gitimage\202011071459.png)
+
+### 自定义Git
+
+让Git显示颜色，会让命令输出看起来更醒目：
+
+```bash
+$ git config --global color.ui true
+```
+
+#### 忽略特殊文件
+
+#### 配置别名
+
+#### 搭建Git服务器
+
