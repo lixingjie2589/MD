@@ -476,3 +476,41 @@ $ git tag -a v0.1 -m "version 0.1 released" 1094adb
 ![](.\image\gitimage\20201107.png)
 
 #### 操作标签
+
+删除标签
+
+```bash
+$ git tag -d v0.1
+Deleted tag 'v0.1' (was f15b0dd)
+```
+
+推送某个标签到远程，使用命令`git push origin <tagname>`：
+
+```bash
+$ git push origin v1.0
+Total 0 (delta 0), reused 0 (delta 0)
+To github.com:michaelliao/learngit.git
+ * [new tag]         v1.0 -> v1.0
+```
+
+一次性推送全部尚未推送到远程的本地标签：
+
+```bash
+$ git push origin --tags
+Total 0 (delta 0), reused 0 (delta 0)
+To github.com:michaelliao/learngit.git
+ * [new tag]         v0.9 -> v0.9
+```
+
+如果标签已经推送到远程先从本地删除,然后，从远程删除：
+
+```bash
+$ git tag -d v0.9
+Deleted tag 'v0.9' (was f52c633)
+
+$ git push origin :refs/tags/v0.9
+To github.com:michaelliao/learngit.git
+ - [deleted]         v0.9
+```
+
+![image-20201107145906461](.\image\gitimage\202011071459.png)
