@@ -525,7 +525,106 @@ $ git config --global color.ui true
 
 #### 忽略特殊文件
 
+在Git工作区的根目录下创建一个特殊的`.gitignore`文件
+
+```bash
+touch .gitignore
+```
+
+用`-f`强制把忽略的文件添加到Git：
+
+```bash
+$ git add -f App.class
+```
+
+查找不能add的原因:
+
+```bash
+$ git check-ignore -v App.class
+.gitignore:3:*.class	App.class
+```
+把指定文件排除在.gitignore规则外的写法就是!+文件名
+```bash
+# 排除所有.开头的隐藏文件:
+.*
+# 排除所有.class文件:
+*.class
+
+# 不排除.gitignore和App.class:
+!.gitignore
+!App.class
+```
+
+
+
 #### 配置别名
+
+`st` 表示 status,`co`表示`checkout`，`ci`表示`commit`，`br`表示`branch`,`unstage` 表示 `reset HEAD`,`last`表示 `log -1`
+
+```bash
+$ git config --global alias.st status
+$ git config --global alias.co checkout
+$ git config --global alias.ci commit
+$ git config --global alias.br branch
+$ git config --global alias.unstage 'reset HEAD'  #把暂存区的修改撤销掉
+$ git config --global alias.last 'log -1'         #显示最后一次提交信息
+# --global参数是全局参数
+```
+
+配置`lg`
+
+```bash
+git config --global alias.lg "log --color --graph --pretty=format:'%Cred%h%Creset -%C(yellow)%d%Creset %s %Cgreen(%cr) %C(bold blue)<%an>%Creset' --abbrev-commit"
+```
+
+效果
+
+![image-20201107155749511](.\image\gitimage\image-20201107155749511.png)
+
+
+
+**配置文件**
+
+配置Git的时候，加上`--global`是针对当前用户起作用的，如果不加，那只针对当前的仓库起作用。
+
+每个仓库的Git配置文件都放在`.git/config`文件中：
+
+```bash
+$ cat .git/config 
+[core]
+    repositoryformatversion = 0
+    filemode = true
+    bare = false
+    logallrefupdates = true
+    ignorecase = true
+    precomposeunicode = true
+[remote "origin"]
+    url = git@github.com:michaelliao/learngit.git
+    fetch = +refs/heads/*:refs/remotes/origin/*
+[branch "master"]
+    remote = origin
+    merge = refs/heads/master
+[alias]
+    last = log -1
+```
+
+别名就在`[alias]`后面，要删除别名，直接把对应的行删掉即可。
+
+而当前用户的Git配置文件放在用户主目录下的一个隐藏文件`.gitconfig`中：
+
+```bash
+$ cat .gitconfig
+[alias]
+    co = checkout
+    ci = commit
+    br = branch
+    st = status
+[user]
+    name = Your Name
+    email = your@email.com
+```
+
+配置别名也可以直接修改这个文件，如果改错了，可以删掉文件重新通过命令配置。
 
 #### 搭建Git服务器
 
