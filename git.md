@@ -407,3 +407,72 @@ $ git cherry-pick 4c805e2
 #### 多人协作
 
 #### Rebase
+### 标签管理
+
+Git标签是一个版本库的快照，就是指向某一个`commit`的指针，可以快速的找到某个版本的`commit`
+
+#### 创建标签
+
+命令`git tag <name>`就可以打一个新标签：
+
+```bash
+$ git tag v1.0
+```
+
+命令`git tag`查看所有标签：
+
+```bash
+$ git tag
+v1.0
+```
+
+查看历史提交的commit id
+
+```bash
+$ git log --pretty=oneline --abbrev-commit
+12a631b (HEAD -> master, tag: v1.0, origin/master) merged bug fix 101
+4c805e2 fix bug 101
+e1e9c68 merge with no-ff
+f52c633 add merge
+cf810e4 conflict fixed
+5dc6824 & simple
+14096d0 AND simple
+b17d20e branch test
+d46f35e remove test.txt
+b84166e add test.txt
+519219b git tracks changes
+e43a48b understand how stage works
+1094adb append GPL
+e475afc add distributed
+eaadf4e wrote a readme file
+```
+
+给指定的commit打标签
+
+```bash
+$ git tag v0.9 f52c633
+```
+
+注意，标签不是按时间顺序列出，而是按字母排序的。可以用`git show <tagname>`查看标签信息：
+
+```bash
+$ git show v0.9
+commit f52c63349bc3c1593499807e5c8e972b82c8f286 (tag: v0.9)
+Author: Michael Liao <askxuefeng@gmail.com>
+Date:   Fri May 18 21:56:54 2018 +0800
+
+    add merge
+
+diff --git a/readme.txt b/readme.txt
+...
+```
+
+还可以创建带有说明的标签，用`-a`指定标签名，`-m`指定说明文字：
+
+```bash
+$ git tag -a v0.1 -m "version 0.1 released" 1094adb
+```
+
+![](.\image\gitimage\20201107.png)
+
+#### 操作标签
