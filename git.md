@@ -687,3 +687,105 @@ $ cat .gitconfig
 
 #### 搭建Git服务器
 
+安装Git依赖库
+
+```bash
+yum install curl-devel expat-devel gettext-devel openssl-devel zlib-devel
+yum install gcc perl-ExtUtils-MakeMaker
+```
+
+下载git源码包并解压,最新的源码包可以在git官网上找到
+
+```bash
+wget https://www.kernel.org/pub/software/scm/git/git-2.28.0.tar.gz
+tar -xzvf git-2.28.0.tar.gz
+```
+
+顺序执行以下命令进行编译安装
+
+```bash
+cd git-2.28.0
+make prefix=/usr/local/git all 
+make prefix=/usr/local/git install
+```
+
+添加环境变量
+
+```bash
+vim /etc/profile
+```
+
+添加 export PATH="/usr/local/git/bin:$PATH"
+
+**添加git用户**
+
+创建用户username和用户组gituser
+
+```bash
+groupadd gituser
+useradd username -g gituser
+passwd username
+```
+
+**初始化git仓库**
+
+在指定目录下执行
+
+```bash
+git init --bare
+```
+
+更改git仓库所属用户组
+
+```bash
+chgrp gituser /usr/local/github
+```
+
+使用chmod命令修改文件的读写权限
+
+将该文件目录的权限为用户组可写
+
+-R表示递归
+
+g 代表所有者所在的组群（group）
+
+w 表示文件可以被写（write）
+
+```bash
+chmod -R g+w /usr/local/github/
+```
+
+**克隆仓库**
+
+```bash
+$ git clone username@116.62.131.99:/usr/local/github
+```
+
+要注意,如果没有修改用户对文件的可读写权限,将会返回
+
+```bash
+Enumerating objects: 3, done.
+Counting objects: 100% (3/3), done.
+Writing objects: 100% (3/3), 196 bytes | 196.00 KiB/s, done.
+Total 3 (delta 0), reused 0 (delta 0)
+remote: error: insufficient permission for adding an object to repository database ./objects
+remote: fatal: failed to write object
+error: remote unpack failed: unpack-objects abnormal exit
+To 116.62.131.98:/usr/local/github
+ ! [remote rejected] master -> master (unpacker error)
+error: failed to push some refs to 'username@116.62.131.98:/usr/local/github'
+```
+
+解决：
+
+```bash
+#进入代码仓库
+cd repository.git 
+#改变代码仓库下，所有文件的访问权限,同组可写
+sudo chmod -R g+ws * 
+#改变代码仓库下，所有文件的访问属性 
+sudo chgrp -R mygroup * 
+#更新配置
+git repo-config core.sharedRepository true
+```
+
