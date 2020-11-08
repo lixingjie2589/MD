@@ -23,6 +23,12 @@ Initialized empty Git repository in /Users/michael/learngit/.git/
 ```
 **把文件添加到版本库**
 
+git add .                提交被修改的和新建的文件，但不包括被删除的文件              
+
+git add -u   --update     update tracked files  更新所有改变的文件，即提交所有变化的文件
+
+git add -A  --all         add changes from all tracked and untracked files  提交已被修改和已被删除文件，但是不包括新的文件
+
 ``` bash
 # 第一步，用命令git add告诉Git，把文件添加到仓库：
 $ git add readme.txt
