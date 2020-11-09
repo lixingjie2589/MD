@@ -733,7 +733,7 @@ passwd username
 
 ```bash
 git init --bare  #裸仓库
-git init         #像Github那样的
+git init         #
 ```
 
 更改git仓库所属用户组
