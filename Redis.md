@@ -439,7 +439,231 @@ OK
 
 ## 三种特殊数据类型
 
+### Geospatial(地理位置)
+
+朋友定位，附近的人，打车距离计算？
+
+测试数据：http://www.jsons.cn/lngcode/
+
+> [GEOADD](http://www.redis.cn/commands/geoadd.html)
+
+```bash
+# 将指定的地理空间位置（纬度、经度、名称）添加到指定的`key`中
+# 两极无法直接添加，可以通过java程序一次性导入
+127.0.0.1:6379> GEOADD city 121.47 31.23 shanghai
+(integer) 1
+```
+
+>[GEOPOS](http://www.redis.cn/commands/geopos.html)
+
+```bash
+# 从`key`里返回所有给定位置元素的位置（经度和纬度）
+127.0.0.1:6379> geopos city shanghai
+1) 1) "121.47000163793563843"
+   2) "31.22999903975783553"
+```
+
+>  [GEODIST](http://www.redis.cn/commands/geodist.html)
+
+```bash
+# 返回两个给定位置之间的直线距离
+# 指定单位的参数 unit 必须是以下单位的其中一个，默认是米：
+# m 表示单位为米。
+# km 表示单位为千米。
+# mi 表示单位为英里。
+# ft 表示单位为英尺。
+127.0.0.1:6379> GEODIST city shanghai beijing km
+"1067.3788"
+
+```
+
+> [GEORADIUS](http://www.redis.cn/commands/georadius.html)
+
+以给定的经纬度为中心， 返回键包含的位置元素当中， 与中心的距离不超过给定最大距离的所有位置元素。
+
+范围可以使用以下其中一个单位：
+
+- **m** 表示单位为米。
+- **km** 表示单位为千米。
+- **mi** 表示单位为英里。
+- **ft** 表示单位为英尺。
+
+在给定以下可选项时， 命令会返回额外的信息：
+
+- `WITHDIST`: 在返回位置元素的同时， 将位置元素与中心之间的距离也一并返回。 距离的单位和用户给定的范围单位保持一致。
+
+- `WITHCOORD`: 将位置元素的经度和维度也一并返回。
+
+- `WITHHASH`: 以 52 位有符号整数的形式， 返回位置元素经过原始 geohash 编码的有序集合分值。 这个选项主要用于底层应用或者调试， 实际中的作用并不大。
+
+命令默认返回未排序的位置元素。 通过以下两个参数， 用户可以指定被返回位置元素的排序方式：
+
+  - `ASC`: 根据中心的位置， 按照从近到远的方式返回位置元素。
+  - `DESC`: 根据中心的位置， 按照从远到近的方式返回位置元素。
+  - `COUNT`: 返回指定个数
+
+```bash
+127.0.0.1:6379> GEORADIUS city 110 30 500 km withdist withcoord count 2 asc 
+1) 1) "chongqin"
+   2) "341.9374"
+   3) 1) "106.49999767541885376"
+      2) "29.52999957900659211"
+2) 1) "xian"
+   2) "483.8340"
+   3) 1) "108.96000176668167114"
+      2) "34.25999964418929977"
+```
+
+> [GEORADIUSBYMEMBER](http://www.redis.cn/commands/georadiusbymember.html)
+
+这个命令和 GEORADIUS 命令一样,但是 `GEORADIUSBYMEMBER` 的中心点是由给定的位置元素决定的
+
+```bash
+127.0.0.1:6379> GEORADIUSBYMEMBER city beijing 100 km
+1) "beijing"
+```
+
+> [GEOHASH](http://www.redis.cn/commands/geohash.html)
+
+该命令将返回11个字符的Geohash字符串
+
+```bash
+127.0.0.1:6379> GEOHASH city beijing
+1) "wx4fbxxfke0"
+```
+
+> GEO底层的实现原理其实是Zset；我们可以使用Zset命令来操作GEO
+
+```bash
+127.0.0.1:6379> ZRANGE city 0 -1
+1) "chongqin"
+2) "xian"
+3) "hangzhou"
+4) "shanghai"
+5) "beijing"
+127.0.0.1:6379> ZREM city xian
+(integer) 1
+```
+
+### Hyperloglog
+
+HyperLoglog是一种用于计数唯一事物的概率数据结构(从技术上讲，这是指估计集合的基数)。
+
+可以用于网页的UV
+
+有一定误差，如果不允许出现错误可以使用set或自己的数据类型
+
+```bash
+127.0.0.1:6379> PFADD k1 a b c d e f f  # 创建第一组元素
+(integer) 1
+127.0.0.1:6379> PFCOUNT k1  # 统计元素的基数个数
+(integer) 6
+127.0.0.1:6379> PFADD k2 e f h i j k 
+(integer) 1
+127.0.0.1:6379> PFCOUNT k2
+(integer) 6
+127.0.0.1:6379> PFMERGE k3 k1 k2  # 合并 并集
+OK
+127.0.0.1:6379> PFCOUNT k3  # 看并集数量
+(integer) 10
+
+```
+
+### Bitmap
+
+Bit 操作分为两组：固定时间的单Bit 操作，如将位设置为1或0，或获取其值，以及对Bit 组的操作，例如，计算给定Bit 范围内的集合位数(例如，人口计数)；两种状态的都可以使用Bitmap；
+
+```bash
+127.0.0.1:6379> SETBIT si 0 1  #新增
+(integer) 0
+127.0.0.1:6379> SETBIT si 1 0
+(integer) 0
+127.0.0.1:6379> GETBIT si 0  # 获取
+(integer) 1
+127.0.0.1:6379> GETBIT si 1
+(integer) 0
+127.0.0.1:6379> BITCOUNT si  #统计
+(integer) 1
+```
+
+## 事务
+
+**Redis事务本质：一组命令的集合！一个事务中的所有命令都会被序列化，在事务执行过程中，就会按照顺序执行！一次性、顺序性、排他性**
+
+**Redis事务没有隔离级别的概念**
+
+**Redis单挑命令是保存原子性的，但是事务不保证原子性；**
+
+redis的事务：
+
+- 开启事务（multi）
+- 命令入队（……）
+- 执行事务（exec）
+
+>正常执行事务
+
+```bash
+127.0.0.1:6379> multi  # 开启事务
+OK
+127.0.0.1:6379> set k1 v1  # 命令入队
+QUEUED
+127.0.0.1:6379> set k2 v2
+QUEUED
+127.0.0.1:6379> get k1
+QUEUED
+127.0.0.1:6379> exec  # 执行事务
+1) OK
+2) OK
+3) "v1"
 
 
+127.0.0.1:6379> DISCARD  # 取消事务，队列中的命令都不会执行
+OK
+```
 
+编译型异常（代码有问题！命令有错！），事务中的所有命令都不会执行！
+
+运行时异常，事务执行时错误的命令不影响其他命令的运行
+
+> **监控**  watch
+
+**悲观锁**
+
+- 很悲观，认为什么时候都会出问题，无论做什么都会加锁!
+
+**乐观锁**
+
+- 很乐观，认为什么时候都不会出问题，所以不会上锁！更新的时候去判断一下在此期间是否有人修改过这个数据
+- 获取version
+- 更新时比较version
+
+```bash
+127.0.0.1:6379> watch k1  #加锁
+OK
+127.0.0.1:6379> UNWATCH  #解锁
+OK
+```
+
+## Jedis
+
+**Jedis是使用Java操作Redis的中间件**
+
+1、导入对应的依赖
+
+```xml
+		<dependency>
+            <groupId>redis.clients</groupId>
+            <artifactId>jedis</artifactId>
+            <version>3.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>fastjson</artifactId>
+            <version>1.2.62</version>
+        </dependency>
+```
+
+2、编码测试
+
+…………详见代码
 
