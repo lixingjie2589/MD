@@ -82,8 +82,6 @@ PONG
 OK
 127.0.0.1:6379> get name
 "sanil"
-127.0.0.1:6379> keys *  #查看所有的key
-1) "name"
 ```
 
 9、查看Redis的进程是否开启
@@ -110,4 +108,338 @@ not connected>
 ```shell
 redis-benchmark -c 100 -n 100000 # 效果图自行脑补
 ```
+
+### 基础知识
+
+redis默认有16个数据库，默认使用的是第0个；
+
+```bash
+127.0.0.1:6379> select 3  #切换数据库
+OK
+127.0.0.1:6379[3]> dbsize  #查看数据库大小
+(integer) 0
+127.0.0.1:6379> keys *  #查看所有的key
+1) "name"
+127.0.0.1:6379> flushdb  # 清空当前数据库
+OK
+127.0.0.1:6379[1]> flushall  # 清空全部数据库
+OK
+```
+
+> Redis是单线程的！
+
+Redis是基于内存操作，CPU不是Redis性能瓶颈，Redis的瓶颈是受机器内存和网络带宽影响；
+
+**Redis是单线程还这么快？**
+
+1、高性能的服务器不一定是多线程的；
+
+2、多线程不一定比单线程效率高；
+
+……
+
+## 五大数据类型
+
+### Redis-Key
+
+```bash
+127.0.0.1:6379> exists name  # 判断当前key是否存在
+(integer) 1
+127.0.0.1:6379> move name 1  # 移除当前key
+(integer) 1
+127.0.0.1:6379> expire name 5  #设置key的过期时间
+(integer) 1
+127.0.0.1:6379> ttl name  # 查看当前key的剩余时间
+(integer) 2
+127.0.0.1:6379> ttl name # -2过期
+(integer) -2
+127.0.0.1:6379> type name  # 查看当前key类型
+string
+```
+
+
+
+### String(字符串)
+
+```bash
+127.0.0.1:6379> APPEND k1 hello  #往某个key追加value，key不存在就等于set
+(integer) 7
+127.0.0.1:6379> STRLEN k1  # 获取某个key的value长度
+(integer) 7
+=======================================================
+# i++
+127.0.0.1:6379> set count 0  # 设置初始值
+OK
+127.0.0.1:6379> get count
+"0"
+127.0.0.1:6379> incr count  # 自增1
+(integer) 1
+127.0.0.1:6379> incr count
+(integer) 2
+127.0.0.1:6379> get count
+"2"
+127.0.0.1:6379> decr count  # 自减1
+(integer) 1
+127.0.0.1:6379> decr count
+(integer) 0
+127.0.0.1:6379> get count
+"0"
+127.0.0.1:6379> incrby count 10  # 自定增量
+(integer) 10
+127.0.0.1:6379> incrby count 10
+(integer) 20
+127.0.0.1:6379> decrby count 5  # 自定减量
+(integer) 15
+127.0.0.1:6379> decrby count 5
+(integer) 10
+=======================================================
+# 字符串范围
+127.0.0.1:6379> GETRANGE k1 0 3  # 截取字符串
+"snai"
+127.0.0.1:6379> GETRANGE k1 0 -1  # 获取全部字符串
+"snail,ll"
+
+# 替换
+127.0.0.1:6379> SETRANGE k1 1 xx  # 替换指定位置开始的字符串
+(integer) 8
+127.0.0.1:6379> get k1
+"sxxil,ll"
+=======================================================
+# setex(set with expire)  设置过期时间
+# setnx(set if not exist) 不存在在设置 (在分布式锁中常常使用)
+127.0.0.1:6379> setex k1 10 hhh  # 设置k1的值为hhh，10秒后过期
+OK
+127.0.0.1:6379> setnx k1 ggg  # 如果k1不存在则创建k1
+(integer) 1
+127.0.0.1:6379> setnx k1 hhh  # 如果k1存在则创建失败
+(integer) 0
+=====================================================
+# mset
+# mget
+127.0.0.1:6379> mset k1 hhh k2 ggg  # 同时设置多个值
+OK
+127.0.0.1:6379> mget k1 k2  # 同时获取多个值
+1) "hhh"
+2) "ggg"
+127.0.0.1:6379> msetnx k1 fff k2 ddd  # 要么一起成功，要么一起失败
+(integer) 0
+
+# 对象
+set user:1{name:zhangsan,age:3} # 设置一个user:1对象 值为json字符来保存一个对象
+
+# 很好的key设计： user:{id}:{filed}
+127.0.0.1:6379> mset user:1:name zs user:1:age 3
+OK
+127.0.0.1:6379> mget user:1:name user:1:age
+1) "zs"
+2) "3"
+=============================
+getset  #先get在set
+127.0.0.1:6379> getset jj kk
+(nil)
+127.0.0.1:6379> getset jj ll
+"kk"
+```
+
+
+
+### List(列表)
+
+在redis中，list可以是栈、队列、阻塞队列！
+
+所有的list命令都是用L开头的
+
+```bash
+127.0.0.1:6379> LPUSH list one  #将一个值插入列表头部 左
+(integer) 1
+127.0.0.1:6379> RPUSH list rigth  # 将一个值插入列表尾部 右
+(integer) 4
+127.0.0.1:6379> LRANGE list 0 -1  # 获取list中的值
+1) "three"
+2) "two"
+3) "one"
+4) "rigth"
+============================
+127.0.0.1:6379> LPOP list #移除list的第一个值
+127.0.0.1:6379> RPOP list #移除list的最后一个值
+127.0.0.1:6379> LREM list 1 one  # 移除指定个数的value
+(integer) 1
+==============================
+127.0.0.1:6379> LINDEX list 0  # 通过下标获得list中的某一个值
+"three"
+127.0.0.1:6379> LLEN list  # 返回列表长度
+(integer) 3
+======================
+127.0.0.1:6379> lrange list 0 -1
+1) "one"
+2) "three"
+3) "two"
+127.0.0.1:6379> LTRIM list 0 1  # 通过下标截取指定的长度，这个list已经被改变，只剩下截断的元素
+OK
+127.0.0.1:6379> lrange list 0 -1
+1) "one"
+2) "three"
+========================
+127.0.0.1:6379> lrange list 0 -1
+1) "one"
+2) "three"
+127.0.0.1:6379> RPOPLPUSH list mylist  # 移除列表的最后一个元素，并移动到新的列表中
+"three"
+127.0.0.1:6379> lrange mylist 0 -1
+1) "three"
+===================
+127.0.0.1:6379> LSET list 0 hhh  # 将列表中指定下标的值替换为另一个值，列表不存在报错，下标不存在报错
+OK
+=====================
+LINSERT # 将value插入到列表中某个元素的前面或者后面
+127.0.0.1:6379> LINSERT list before word other
+(integer) 3
+127.0.0.1:6379> LINSERT list after word other
+(integer) 4
+```
+
+> 小结
+
+- 它是实际上是一个链表，before Node after，left ，rigth都可以插入值
+- 如果key不存在则创建新的链表；存在就新增内容
+- 移除链表的所有值，空链表也代表不存在
+- 在两边插入或者改动值，效率最高；中间元素相对效率会低一些
+
+### Set(集合)
+
+```bash
+127.0.0.1:6379> SADD set hello  # set集合中添加元素
+(integer) 1
+127.0.0.1:6379> SADD set word
+(integer) 1
+127.0.0.1:6379> SMEMBERS set  # 查看指定的set的所有值
+1) "word"
+2) "hello"
+127.0.0.1:6379> SISMEMBER set hello  # 判断某一个值是不是在set集合中
+(integer) 1
+127.0.0.1:6379> SISMEMBER set hellol
+(integer) 0
+127.0.0.1:6379> SCARD set  # 获取set集合中元素个数
+(integer) 2
+127.0.0.1:6379> SREM set hello  # 移除set集合中的指定元素
+(integer) 1
+127.0.0.1:6379> SRANDMEMBER set  # 随机抽取出一个元素
+"hello"
+127.0.0.1:6379> SRANDMEMBER set 2  # 随机抽取出指定个数的元素
+1) "word"
+2) "txt"
+127.0.0.1:6379> SPOP set  # 随机删除一些set集合中的元素，后面可以指定个数
+"word"
+127.0.0.1:6379> SMOVE set set2 txt  # 将一个指定的值移动到另一个set集合
+(integer) 1
+
+127.0.0.1:6379> sdiff k1 k2  # 差集
+1) "a"
+2) "b"
+127.0.0.1:6379> SINTER k1 k2  # 交集
+1) "c"
+127.0.0.1:6379> SUNION k1 k2  # 并集
+1) "a"
+2) "b"
+3) "c"
+4) "d"
+5) "e"
+
+```
+
+
+
+### Hash(哈希)
+
+```bash
+127.0.0.1:6379> hset hash k1 snail  # set一个k-v
+(integer) 1
+127.0.0.1:6379> hget hash k1  # 获取一个字段值
+"snail"
+127.0.0.1:6379> hmset hash k1 ss k2 hh  # set多个k-v
+OK
+127.0.0.1:6379> hmget hash k1 k2 # get多个字段值
+1) "ss"
+2) "hh"
+127.0.0.1:6379> HGETALL hash  # 获取全部的数据
+1) "k1"
+2) "ss"
+3) "k2"
+4) "hh"
+127.0.0.1:6379> HDEL hash k1  # 删除hash指定key字段！对应的value也删除
+(integer) 1
+127.0.0.1:6379> HLEN hash  # 获取hash表的字段数量
+(integer) 1
+ 
+127.0.0.1:6379> HEXISTS hash k2  # 判断hash中指定字段是否存在
+(integer) 1
+127.0.0.1:6379> HEXISTS hash k1
+(integer) 0
+127.0.0.1:6379> 
+
+127.0.0.1:6379> hkeys hash  # 获取所有的field
+1) "k2"
+127.0.0.1:6379> HVALS hash  # 获取所有的value
+1) "hh"
+
+127.0.0.1:6379> HINCRBY hash k3 1  # 指定增量
+(integer) 6
+127.0.0.1:6379> HINCRBY hash k3 -1
+(integer) 6
+
+127.0.0.1:6379> hsetnx hash k3 hello  # 不存在可以设置，存在就不能设置
+(integer) 0
+
+```
+
+
+
+### Zset(有序集合)
+
+```bash
+127.0.0.1:6379> ZADD zset 1 one  # 添加一个值
+(integer) 1
+127.0.0.1:6379> ZADD zset 2 two 3 three  # 添加多个值
+(integer) 2
+127.0.0.1:6379> zrange zset 0 -1  # 查看
+1) "one"
+2) "two"
+3) "three"
+
+127.0.0.1:6379> ZRANGEBYSCORE zset -inf +inf  # 显示全部用户，从小到大
+1) "one"
+2) "two"
+3) "three"
+127.0.0.1:6379> ZREVRANGE zset 0 -1   # 显示全部用户，从大到小
+1) "two"
+2) "one"
+127.0.0.1:6379> ZRANGEBYSCORE zset -inf +inf withscores  #显示全部用户和成绩
+1) "one"
+2) "1"
+3) "two"
+4) "2"
+5) "three"
+6) "3"
+127.0.0.1:6379> ZRANGEBYSCORE zset -inf 2 withscores # 显示小于等于2的值
+1) "one"
+2) "1"
+3) "two"
+4) "2"
+
+127.0.0.1:6379> ZREM zset three  # 移除指定元素
+(integer) 1
+127.0.0.1:6379> ZCARD zset  # 获取集合中的个数
+(integer) 2
+127.0.0.1:6379> ZCOUNT zset 1 3  # 获取指定区间的成员个数
+(integer) 3
+
+```
+
+
+
+## 三种特殊数据类型
+
+
+
+
 
