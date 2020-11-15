@@ -667,3 +667,31 @@ OK
 
 …………详见代码
 
+## SpringBoot整合
+
+在SpringBoot2.0之后，原来使用的jedis被替换为lettuce
+
+jedis：采用直连，多个线程操作的话是不安全的，如果要避免不安全，可以使用jedis pool连接池；更像BIO模式；
+
+lettuce：采用netty，实列可以在多个线程中进行共享，不存在线程不安全的情况；可以减少线程数据，更像NIO模式；
+
+> 整合测试
+
+1、导入依赖
+
+```xml
+<dependency>
+	<groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+```
+
+2、配置连接
+
+```properties
+#配置redis
+spring.redis.host=192.168.35.128
+spring.redis.port=6379
+```
+
+3、测试代码见项目……
