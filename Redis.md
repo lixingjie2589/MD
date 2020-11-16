@@ -695,3 +695,203 @@ spring.redis.port=6379
 ```
 
 3、测试代码见项目……
+
+## Redis.conf详解
+
+启动的时候通过配置文件启动！
+
+> 单位
+
+```bash
+# 1k => 1000 bytes
+# 1kb => 1024 bytes
+# 1m => 1000000 bytes
+# 1mb => 1024*1024 bytes
+# 1g => 1000000000 bytes
+# 1gb => 1024*1024*1024 bytes
+#
+# units are case insensitive so 1GB 1Gb 1gB are all the same.
+```
+
+配置文件unit单位对大小写不敏感！
+
+> 包含  可以与其他配置文件一起
+
+```bash
+# include /path/to/local.conf
+# include /path/to/other.conf
+```
+
+> 网络
+
+```bash
+bind 127.0.0.1  # 绑定的ip
+protected-mode yes  # 保护模式
+port 6379  # 端口设置
+```
+
+> 通用GENERAL
+
+```bash
+daemonize no  # 以守护进程的方式运行，默认是no，需手动改为yes
+pidfile /var/run/redis_6379.pid  # 如果以后台的方式运行，我们就需要指定一个pid文件
+
+# 日志
+# Specify the server verbosity level.
+# This can be one of:
+# debug (a lot of information, useful for development/testing)
+# verbose (many rarely useful info, but not a mess like the debug level)
+# notice (moderately verbose, what you want in production probably) 生产环境
+# warning (only very important / critical messages are logged)
+loglevel notice
+logfile ""  # 日志的文件位置
+databases 16  #默认数据库的数量，16个
+always-show-logo yes  # 是否总是显示LOGO
+```
+
+> 快照
+
+持久化，在规定内，执行了多少次操作，则会持久化到文件 .rdb .aof；
+
+redis是内存数据库，如果没有持久化，那么断电即失；
+
+```bash
+save 900 1  # 如果900秒内至少有 1个key进行了修改，就进行持久化
+save 300 10  # 如果300秒内至少有 10个key进行了修改，就进行持久化
+save 60 10000  # 如果60秒内至少有 10000个key进行了修改，就进行持久化
+
+stop-writes-on-bgsave-error yes # 持久化出错，是否继续工作
+
+rdbcompression yes  # 是否压缩rdb文件，需要消耗一些cpu资源
+
+rdbchecksum yes  # 保存rdb文件的时候，进行错误的检验
+
+dir ./  # rdb文件保存的目录
+```
+
+> REPLICATION 复制
+
+……
+
+> SECURITY 安全
+
+可以设置redis的密码，默认是没有密码；
+
+```bash
+127.0.0.1:6379> config get requirepass # 获取redis密码
+1) "requirepass"
+2) ""
+127.0.0.1:6379> config set requirepass "123456" # 设置redis密码
+OK
+127.0.0.1:6379> auth 123456 # 使用密码进行登录
+OK
+```
+
+> CLIENTS 限制
+
+```bash
+maxclients 10000  # 设置能链接上redis的最大客户端的数量
+maxmemory <bytes> # redis配置最大的内存容量
+maxmemory-policy noeviction # 内存到达上限之后的处理策略
+1、默认为 noeviction   ：这个策略是说如果redis数据库达到最大内存时会不进行置换key，但是会返回给客户端一个错误信息
+
+2、volatile-lru:对生存周期内很少有使用key进行置换
+
+3、volatile-random：对生存周期中的key进行随机置换
+
+4、volatile-ttl：对生存周期内的key随机进行抽取，在这个抽取中取出生存周期最不常用的key进行置换
+
+5、allkeys-random：对整个数据库的key进行随机置换
+
+6、allkeys-lru：置换整个数据库中最少使用的key
+```
+
+> APPEND ONLY MODE 模式aof
+
+```bash
+appendonly no  # 默认不开启
+appendfilename "appendonly.aof"  # 持久化文件名
+
+# appendfsync always  每次修改都会sync，消耗性能
+appendfsync everysec  # 每秒执行一次sync，可能会丢失这一秒的数据
+# appendfsync no  不执行sync，这个时候操作系统自己同步数据，速度最快
+
+```
+
+## Redis持久化
+
+Redis的数据都存放在内存中，如果没有配置持久化，redis重启后数据就全丢失了，于是需要开启redis的持久化功能，将数据保存到磁盘上，当redis重启后，可以从磁盘中恢复数据。
+
+redis提供两种方式进行持久化：
+
+RDB持久化是指在指定的时间间隔内将内存中的数据集快照写入磁盘，实际操作过程是fork一个子进程，先将数据集写入临时文件，写入成功后，再替换之前的文件，用二进制压缩存储。
+
+**优点：**
+
+1、适合大规模的数据恢复；
+
+2、对数据的完整性不高；
+
+**缺点：**
+
+1、需要一定的时间间隔进行操作，如果redis意外宕机了，最后一次修改的数据就没有了；
+
+2、fork进程的时候会占用一定的内存空间；
+
+
+
+AOF持久化以日志的形式记录服务器所处理的每一个写、删除操作，查询操作不会记录，以文本的方式记录，可以打开文件看到详细的操作记录。
+
+**优点：**
+
+1、每一次修改都同步，文件的完整性更好；
+
+2、每秒同步一次，可能会丢失一秒的数据；
+
+**缺点：**
+
+1、现对于数据文件来说，aof远远大于rdb，修复速度也比rdb慢；
+
+2、aof运行效率也要比rdb慢；
+
+## Redis发布订阅
+
+Redis 发布订阅 (pub/sub) 是一种消息通信模式：发送者 (pub) 发送消息，订阅者 (sub) 接收消息。
+
+Redis 客户端可以订阅任意数量的频道。
+
+Redis 发布订阅命令：
+
+| 1    | [ PSUBSCRIBE pattern [pattern ...\]](https://www.runoob.com/redis/pub-sub-psubscribe.html)  订阅一个或多个符合给定模式的频道。 |
+| ---- | ------------------------------------------------------------ |
+| 2    | [PUBSUB subcommand [argument [argument ...\]]](https://www.runoob.com/redis/pub-sub-pubsub.html)  查看订阅与发布系统状态。 |
+| 3    | [PUBLISH channel message](https://www.runoob.com/redis/pub-sub-publish.html)  将信息发送到指定的频道。 |
+| 4    | [PUNSUBSCRIBE [pattern [pattern ...\]]](https://www.runoob.com/redis/pub-sub-punsubscribe.html)  退订所有给定模式的频道。 |
+| 5    | [SUBSCRIBE channel [channel ...\]](https://www.runoob.com/redis/pub-sub-subscribe.html)  订阅给定的一个或多个频道的信息。 |
+| 6    | [UNSUBSCRIBE [channel [channel ...\]]](https://www.runoob.com/redis/pub-sub-unsubscribe.html)  指退订给定的频道。 |
+
+> 测试
+
+订阅端：
+
+```bash
+127.0.0.1:6379> SUBSCRIBE snail  # 订阅一个频道
+Reading messages... (press Ctrl-C to quit)
+1) "subscribe"
+2) "snail"
+3) (integer) 1
+# 等待读取推送的消息
+1) "message" # 消息
+2) "snail" # 来源
+3) "hello,snail" # 具体内容
+```
+
+发送端：
+
+```bash
+127.0.0.1:6379> PUBLISH snail "hello,snail" # 发布者发布消息到频道
+(integer) 1
+```
+
+## Redis 集群环境搭建
+
