@@ -141,6 +141,8 @@ $ git commit -m "remove test.txt"
 [master d46f35e] remove test.txt
  1 file changed, 1 deletion(-)
  delete mode 100644 test.txt
+ 
+ $ git rm --cached 文件名 # 取消跟踪保存在本地
 ```
 **删错了**
 ```bash
