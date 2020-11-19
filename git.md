@@ -179,7 +179,20 @@ remote: Counting objects: 3, done.
 remote: Total 3 (delta 0), reused 0 (delta 0), pack-reused 3
 Receiving objects: 100% (3/3), done.
 ```
+切换提交地址
+
+```bash
+git remote -v  # 查看clone 地址
+
+git remote rm origin  # 移除https的方式，换成 ssh方式
+
+git remote add origin git地址
+```
+
+
+
 ![](./image/gitimage/20201023105212.png)
+
 ### 分支管理
 #### 创建与合并分支
 **首先，我们创建dev分支，然后切换到dev分支：**
