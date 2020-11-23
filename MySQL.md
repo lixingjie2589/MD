@@ -49,3 +49,15 @@ sc delete mysql # 清空服务，在重新装
 ```
 
 7、可视化软件自行安装；
+
+## 常用命令
+
+```cmd
+mysql> exit;  --退出连接
+mysql> show databases;  --查看所有数据库
+mysql> use snail;  --切换数据库
+mysql> show tables;  -- 查看所有表
+mysql> describe student;  -- 显示表的信息
+mysql> create database ttu;  -- 创建一个数据库
+```
+
