@@ -120,7 +120,9 @@ TRUNCATE table_name;
 
 ```mysql
 # 基本查询
-SELECT DISTINCT 列名称 AS 别名 FROM 表名称 AS 别名
+SELECT DISTINCT(去重) 列名称 AS 别名 FROM 表名称 AS 别名
 SELECT * FROM 表名称
 ```
+
+![](image\MySqlImage\20201125.png)
 
