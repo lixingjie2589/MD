@@ -1173,3 +1173,17 @@ static Lock reenLock = new ReentrantLock();
 > 解决方案
 
 自行百度……
+
+# 问题
+
+## 连接外网首先有在redis.conf改几个设置
+
+1.daemonize yes
+2.注释 bind 127.0.0.1
+3.protected-mode no
+其次看一下自己防火墙对端口号开没开放
+firewall-cmd --query-port=6379/tcp
+如果是yes就是开放的
+然后 redis-server lconfig/redis.conf
+redis-cli -h 自己外网端口号 -p 6379
+最后ping一下如果pong就成功了
