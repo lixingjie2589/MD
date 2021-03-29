@@ -14,3 +14,17 @@ tasklist|findstr "127704"
 taskkill /f /t /im java.exe
 ```
 
+激活Windows
+
+```cmd
+# 查看过期时间
+slmgr.vbs -xpr
+
+1
+slmgr /ipk 激活码
+2
+slmgr /skms kms.xspace.in
+3
+slmgr /ato
+```
+
