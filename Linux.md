@@ -198,3 +198,123 @@ pos不对
 master查看二进制文件，slave重新绑定一下
 ```
 
+#### 读写分离
+
+##### **pom.xml**
+
+```xml
+<dependencies>
+        <!--依赖web-->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <!--依赖mybatis和mysql驱动-->
+        <dependency>
+            <groupId>org.mybatis.spring.boot</groupId>
+            <artifactId>mybatis-spring-boot-starter</artifactId>
+            <version>2.1.4</version>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <scope>runtime</scope>
+        </dependency>
+        <!--依赖lombok-->
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <optional>true</optional>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!--依赖sharding-->
+        <dependency>
+            <groupId>org.apache.shardingsphere</groupId>
+            <artifactId>sharding-jdbc-spring-boot-starter</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.shardingsphere</groupId>
+            <artifactId>sharding-core-common</artifactId>
+            <version>4.0.0</version>
+        </dependency>
+        <!--依赖数据源druid-->
+        <dependency>
+            <groupId>com.alibaba</groupId>
+            <artifactId>druid-spring-boot-starter</artifactId>
+            <version>1.1.22</version>
+        </dependency>
+</dependencies>
+```
+
+##### yml
+
+```yml
+server:
+  port: 8086
+spring:
+  main:
+    allow-bean-definition-overriding: true
+  shardingsphere:
+    #参数配置显示sql
+    props:
+      sql:
+        show: true
+    #配置数据源
+    datasource:
+      #给每个数据源取别名
+      names: ds1,ds2,ds3
+      ds1:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://192.168.150.128:3306/sharding_jdbc?useSSL=false&Unicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+        username: root
+        password: 123456
+        maxPoolSize: 100
+        minPoolSize: 5
+      ds2:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://192.168.150.129:3306/sharding_jdbc?useSSL=false&Unicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+        username: root
+        password: 123456
+        maxPoolSize: 100
+        minPoolSize: 5
+      ds3:
+        type: com.alibaba.druid.pool.DruidDataSource
+        driver-class-name: com.mysql.cj.jdbc.Driver
+        url: jdbc:mysql://192.168.150.129:3306/sharding_jdbc?useSSL=false&Unicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+        username: root
+        password: 123456
+        maxPoolSize: 100
+        minPoolSize: 5
+    #配置默认数据源ds1
+    sharding:
+      #
+      default-data-source-name: ds1
+    #
+    masterslave:
+      #配置主从名字随便取
+      name: ms
+      #配置master主库
+      master-data-source-name: ds1
+      #配置slave从库
+      slave-data-source-names: ds2,ds3
+      #配置slave负载均衡规则 轮询
+      load-balance-algorithm-type: round_robin
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.learn.entity
+```
+
+#### 分库分表
+
+##### 水平拆分
+
+##### 垂直拆分
+
