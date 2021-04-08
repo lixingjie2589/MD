@@ -32,6 +32,22 @@ https://www.runoob.com/w3cnote/vmware-install-centos7.html
 
 https://baijiahao.baidu.com/s?id=1658940916954646386&wfr=spider&for=pc
 
+#### ifconfig不显示ip问题
+
+```bash
+# 进入到指定目录
+cd /etc/sysconfig/network-scripts/
+# 查看名字
+ls
+ifcfg-ens33 # 可能事其他名字
+# 编辑配置文件
+vi ifcfg-ens33
+# 具体修改
+ONBOOT=no,将no  改为yes
+```
+
+
+
 ### Mysql
 
 #### 安装
