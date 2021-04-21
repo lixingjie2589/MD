@@ -318,3 +318,14 @@ mybatis:
 
 ##### 垂直拆分
 
+#### sharding-jdbc事务
+
+```java
+@Transactional(rollbackFor = Exception.class)//出现异常回滚，在单库里面可以解决
+@ShardingTransactionType(TransactionType.XA)//分布式事务，需要导包
+public int save(){
+    方法1
+    方法2
+}
+```
+
