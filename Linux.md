@@ -294,7 +294,7 @@ spring:
         minPoolSize: 5
     #配置默认数据源ds1
     sharding:
-      #
+      # 注意要配置读写分离
       default-data-source-name: ds1
     #
     masterslave:
