@@ -46,7 +46,64 @@ vi ifcfg-ens33
 ONBOOT=no,将no  改为yes
 ```
 
+### CentOS7.x 搭建FTP服务器,Java上传下载
 
+```bash
+# 1.查看系统是否自带vsftpd软件
+rpm -qa | grep vsftpd
+
+# 2.使用yum安装vsftpd软件
+yum install vsftpd -y
+
+# 3.启动服务，并查看21端口是否处于监听状态
+systemctl start vsftpd
+netstat -nltp | grep 21
+
+# 4.停止服务和重启服务的命令
+systemctl stop vsftpd.service
+systemctl restart vsftpd.service
+
+# 5.为FTP创建用户，并为用户设置密码，以及用户主目录
+useradd ftpuser  #创建用户
+echo "ftpuser" | passwd ftpuser --stdin  #为用户设置密码
+usermod -s /sbin/nologin ftpuser  #限制该用户只能访问ftp服务器
+
+# 6.为用户设置主目录
+mkdir -p /data/ftp/pub  #创建根目录
+chmod a-w /data/ftp && chmod 777 -R /data/ftp/pub  #设置访问权限
+usermod -d /data/ftp ftpuser  #设置为用户的主目录： 即用户通过 FTP 登录后看到的根目录
+
+# 7.访问ftp服务
+ftp://ftpuser:123456@101.37.174.111
+# 8.注意防火墙、开放端口等
+
+# 9.修改SETLinux权限
+getenforce  #查看修改前的结果
+setenforce 0  #修改
+
+# 配置文件备份
+mv vsftpd.conf vsftpd.conf_bak #重命名
+cat vsftpd.conf_bak | grep -v "#" # 过滤掉带#的内容
+cat vsftpd.conf_bak | grep -v "#" > vsftpd.conf # 输出过滤后的内容
+
+# 匿名登录配置
+anon_umask=022
+anon_upload_enable=YES #允许上传
+anon_mkdir_write_enable=YES #允许写入
+anon_other_write_enable=YES #允许其他操作
+
+# ftp服务登录报530
+#vsftpd默认会检查用户的shell，如果用户的shell在/etc/shells没有记录，则无法登陆ftp
+/sbin/nologin
+```
+
+1.userlist_enable和userlist_deny两个选项联合起来针对的是：本地全体用户（除去ftpusers中的用户）和出现在user_list文件中的用户以及不在在user_list文件中的用户这三类用户集合进行的设置。
+
+2.当且仅当userlist_enable=YES时：userlist_deny项的配置才有效，user_list文件才会被使用；当其为NO时，无论userlist_deny项为何值都是无效的，本地全体用户（除去ftpusers中的用户）都可以登入FTP
+
+3.当userlist_enable=YES时，userlist_deny=YES时：user_list是一个黑名单，即：所有出现在名单中的用户都会被拒绝登入；
+
+4.当userlist_enable=YES时，userlist_deny=NO时：user_list是一个白名单，即：只有出现在名单中的用户才会被准许登入(user_list之外的用户都被拒绝登入)；另外需要特别提醒的是：使用白名单后，匿名用户将无法登入！除非显式在user_list中加入一行：anonymous
 
 ### Mysql
 
