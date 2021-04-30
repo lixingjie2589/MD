@@ -46,7 +46,7 @@ vi ifcfg-ens33
 ONBOOT=no,将no  改为yes
 ```
 
-### CentOS7.x 搭建FTP服务器,Java上传下载
+### FTP服务器
 
 ```bash
 # 1.查看系统是否自带vsftpd软件
@@ -104,6 +104,78 @@ anon_other_write_enable=YES #允许其他操作
 3.当userlist_enable=YES时，userlist_deny=YES时：user_list是一个黑名单，即：所有出现在名单中的用户都会被拒绝登入；
 
 4.当userlist_enable=YES时，userlist_deny=NO时：user_list是一个白名单，即：只有出现在名单中的用户才会被准许登入(user_list之外的用户都被拒绝登入)；另外需要特别提醒的是：使用白名单后，匿名用户将无法登入！除非显式在user_list中加入一行：anonymous
+
+
+
+### nginx
+
+**安装需要的组件**
+
+```bash
+#gcc && g++
+yum install gcc-c++
+#pcre
+yum install -y pcre pcre-devel
+#zlib
+yum install -y zlib zlib-devel
+#openssl
+yum install -y openssl openssl-devel
+```
+
+**安装**
+
+```bash
+#解压nginx文件
+tar -zxvf nginx-1.17.5.tar.gz
+#安装
+## 创建一个nginx安装目录
+mkdir nginx
+cd nginx-1.12.2
+## 指定文件安装路径
+./configure --prefix=/opt/nm/nginx
+make
+make install
+#安装完成后内容会安装到指定的路径 /opt/nm/nginx下，否则会在默认目录/usr/local/nginx
+```
+
+**启动nginx**
+
+```bash
+## 修改配置文件
+cd /opt/nm/nginx/conf
+vim nginx.conf
+## 设置端口为8080，也可设置成其他
+listen    8080;
+## 进入到启动目录
+cd /opt/nm/nginx/sbin
+## 检查配置文件是否有问题
+./nginx -t
+##没有问题的结果如下所示：
+[soa@testsoa04 sbin]$ ./nginx -t
+nginx: the configuration file /home/lege/nginx/conf/nginx.conf syntax is ok
+nginx: configuration file /home/lege/nginx/conf/nginx.conf test is successful
+[soa@testsoa04 sbin]$ 
+  
+## 查询配置参数
+./nginx -V
+## 对于已安装的nginx需要修改配置参数
+./configure --prefix=/home/lege/nginx ...配置参数
+make
+make install 
+然后重新启动nginx即可
+## 启动
+./nginx
+## 停止
+./nginx -s stop
+## 重启
+./nginx -s reload
+## 输入网址验证是否启动成功
+http://ip:port/
+```
+
+https://www.jb51.net/article/174467.htm
+
+
 
 ### Mysql
 
