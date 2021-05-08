@@ -10,6 +10,43 @@ firewall-cmd --zone=public --add-port=9000/tcp --permanent
 #重启防火墙
 systemctl restart firewalld.service
 
+#### free命令
+
+```bash
+# 语法
+free [-bkmotV][-s <间隔秒数>]
+# 参数
+-b 　以Byte为单位显示内存使用情况。
+-k 　以KB为单位显示内存使用情况。
+-m 　以MB为单位显示内存使用情况。
+-h 　以合适的单位显示内存使用情况，最大为三位数，自动计算对应的单位值。
+-o 　不显示缓冲区调节列。
+-s <间隔秒数> 持续观察内存使用状况。
+-c <次数> 打印次数
+-t 　显示内存总和列。
+-V 　显示版本信息。
+```
+**Mem，-/+ buffers/cache，Swap 解释**
+| 名称              | 含义                           |
+| ---------------- | ------------------------------ |
+| Mem               | 内存的使用情况                 |
+| -/+ buffers/cache | 表示物理内存已用多少，可用多少 |
+| Swap              | 交换空间的使用情况             |
+**total，used，free，shared，buffers，cached 解释**
+
+| 名称    | 含义                                                         |
+| ------- | ------------------------------------------------------------ |
+| total   | 总量                                                         |
+| used    | 已使用的                                                     |
+| free    | 空闲的                                                       |
+| shared  | 共享的，在linux里面有很多共享内存，比如一个libc库，很多程序调用，但实际只存一份 |
+| buffers | 缓存，可回收                                                 |
+| cached  | 缓存，可回收                                                 |
+
+
+
+
+
 #### 安装vim
 
 ```bash
