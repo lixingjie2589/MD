@@ -28,3 +28,5 @@ slmgr /skms kms.xspace.in
 slmgr /ato
 ```
 
+@echo off
+start "" "C:\Program Files\Tencent\QQ\Bin\QQScLauncher.exe"

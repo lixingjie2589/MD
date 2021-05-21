@@ -142,6 +142,8 @@ anon_other_write_enable=YES #允许其他操作
 
 4.当userlist_enable=YES时，userlist_deny=NO时：user_list是一个白名单，即：只有出现在名单中的用户才会被准许登入(user_list之外的用户都被拒绝登入)；另外需要特别提醒的是：使用白名单后，匿名用户将无法登入！除非显式在user_list中加入一行：anonymous
 
+### GitLab
+
 
 
 ### nginx
