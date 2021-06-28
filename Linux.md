@@ -1,5 +1,14 @@
 ### Linux
 
+#### 基本命令
+
+```bash
+uname -r # 查看系统内核
+cat /etc/os-release # 系统版本
+```
+
+
+
 #### 防火墙
 
 #查看防火墙规则
@@ -271,6 +280,46 @@ service mysqld restart
 https://www.cnblogs.com/yss818824/p/12349719.html
 ```
 
+#### 卸载
+
+```bash
+# 查看是否安装
+rpm -qa | grep -i mysql
+# 删除查出来的文件
+rpm -e --nodeps MySQL-server-5.6.23-1.el6.x86_64
+# 查看相关文件
+find / -name mysql
+# 删除(不删除不知道有无影响)
+rm -rf $(find / -name mysql)
+```
+
+#### 通过 *.frm、*.ibd 文件恢复表结构数据
+
+```bash
+# .frm文件可以获取表结构
+# .ibd文件是表空间(数据)
+
+# 下载工具 此处使用dbsake
+curl -s get.dbsake.net > dbsake
+# 设置权限
+chmod u+x dbsake
+# 运行后得到创建表的语句
+./dbsake  frmdump  [frm-file-path]
+# 得到表结构后就是恢复数据
+# 删除新建表的表空间
+alter table  表名  discard tablespace;
+# 把.ibd文件复制到相应位置下
+# 修改拥有者
+chown -R mysql.mysql *.ibd
+# 将新的表空间与表结构进行绑定
+alter table  表名  import tablespace;
+
+```
+
+
+
+
+
 #### 主从复制
 
 ##### 具体配置
@@ -497,3 +546,831 @@ public int save(){
 }
 ```
 
+
+
+
+
+### ElasticSearch
+
+#### Docker安装Elasticsearch、Kibana
+
+**1、下载镜像文件**
+
+```bash
+# 存储和检索数据
+docker pull elasticsearch:7.4.2
+# 可视化检索数据
+docker pull kibana:7.4.2
+```
+
+**2、配置挂载数据文件夹**
+
+```bash
+# 创建配置文件目录
+mkdir -p /mydata/elasticsearch/config
+# 创建数据目录
+mkdir -p /mydata/elasticsearch/data
+# 将/mydata/elasticsearch/文件夹中文件都可读可写
+chmod -R 777 /mydata/elasticsearch/
+# 配置任意机器可以访问 elasticsearch
+echo "http.host: 0.0.0.0" >/mydata/elasticsearch/config/elasticsearch.yml
+```
+
+3、启动Elasticsearch
+
+```bash
+docker run --name elasticsearch -p 9200:9200 -p 9300:9300 \
+-e  "discovery.type=single-node" \
+-e ES_JAVA_OPTS="-Xms64m -Xmx512m" \
+-v /mydata/elasticsearch/config/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml \
+-v /mydata/elasticsearch/data:/usr/share/elasticsearch/data \
+-v /mydata/elasticsearch/plugins:/usr/share/elasticsearch/plugins \
+-d elasticsearch:7.4.2
+```
+
+- `-p 9200:9200 -p 9300:9300`：向外暴露两个端口，9200用于HTTP REST API请求，9300 ES 在分布式集群状态下 ES 之间的通信端口；
+
+- `-e  "discovery.type=single-node"`：es 以单节点运行
+
+- `-e ES_JAVA_OPTS="-Xms64m -Xmx512m"`：设置启动占用内存，不设置可能会占用当前系统所有内存
+
+- -v：挂载容器中的配置文件、数据文件、插件数据到本机的文件夹；
+
+- `-d elasticsearch:7.6.2`：指定要启动的镜像
+
+访问 IP:9200 看到返回的 json 数据说明启动成功。
+
+**4、设置 Elasticsearch 随Docker启动**
+
+```bash
+# 当前 Docker 开机自启，所以 ES 现在也是开机自启
+docker update elasticsearch --restart=always
+```
+
+**5、启动可视化Kibana**
+
+```bash
+docker run --name kibana \
+-e ELASTICSEARCH_HOSTS=http://192.168.35.131:9200 \
+-p 5601:5601 \
+-d kibana:7.4.2
+```
+
+`-e ELASTICSEARCH_HOSTS=http://192.168.163.131:9200`: **这里要设置成自己的虚拟机IP地址**
+
+浏览器输入192.168.163.131:5601 测试
+
+**6、设置 Kibana 随Docker启动**
+
+```bash
+# 当前 Docker 开机自启，所以 kibana 现在也是开机自启
+docker update kibana --restart=always
+```
+
+#### Elasticsearch-使用入门
+
+**_cat**
+
+1. /_cat/nodes :  查看所有节点
+
+2. /_cat/health：查看ES健康状况
+
+3. /_cat/master：查看主节点信息
+
+4. /_cat/indices：查看所有索引   等价于 mysql 数据库的 show databases;
+
+**索引一个文档**
+
+即保存一条数据，保存在哪个索引的哪个类型下，指定用哪个唯一标识。
+
+1. PUT 请求
+
+接口：`PUT http://192.168.163.131:9200/customer/external/1`
+
+2. POST 请求
+
+接口：`POST http://192.168.163.131:9200/customer/external/`
+
+PUT和POST都可以
+
+- POST新增，如果不指定id，会自动生成id。指定id就会修改这个数据，并新增版本号；
+- PUT可以新增也可以修改。PUT必须指定id；由于PUT需要指定id，我们一般用来做修改操作，不指定id会报错。
+
+**查看文档**
+
+/index/type/id
+
+接口：`GET http://192.168.163.131:9200/customer/external/1`
+
+```js
+{
+    "_index": "customer",  # 在哪个索引(库)
+    "_type": "external",   # 在哪个类型(表)
+    "_id": "1",            # 文档id(记录)
+    "_version": 5,         # 版本号
+    "_seq_no": 4,          # 并发控制字段，每次更新都会+1，用来做乐观锁
+    "_primary_term": 1,    # 同上，主分片重新分配，如重启，就会变化
+    "found": true,
+    "_source": {           # 数据
+        "name": "zhangsan"
+    }
+}
+# 乐观锁更新时携带 ?_seq_no=0&_primary_term=1  当携带数据与实际值不匹配时更新失败
+```
+
+**更新文档**
+
+/index/type/id/_update
+
+接口：`POST http://192.168.163.131:9200/customer/external/1/_update`
+
+几种更新文档的区别:
+
+在上面索引文档即保存文档的时候介绍，还有两种更新文档的方式：
+
+- 当PUT请求带id，且有该id数据存在时，会更新文档；
+- 当POST请求带id，与PUT相同，该id数据已经存在时，会更新文档；
+
+这两种请求类似，即带id，且数据存在，就会执行更新操作。
+
+类比：
+
+- 请求体的报文格式不同，_update方式要修改的数据要包裹在 doc 键下
+- _update方式不会重复更新，数据已存在不会更新，版本号不会改变，另两种方式会重复更新（覆盖原来数据），版本号会改变
+- 这几种方式在更新时都可以增加属性，PUT请求带id更新和POST请求带id更新，会直接覆盖原来的数据，不会在原来的属性里面新增属性
+
+**删除文档&索引**
+
+**删除文档**
+
+接口：`DELETE http://192.168.163.131:9200/customer/external/1`
+
+**删除索引**
+
+接口：`DELETE http://192.168.163.131:9200/customer`
+
+**_bulk-批量操作数据**
+
+语法格式：
+
+```json
+{action:{metadata}}\n   // 例如index保存记录，update更新
+{request body  }\n
+
+{action:{metadata}}\n
+{request body  }\n
+```
+
+1. **指定索引和类型的批量操作**
+
+接口：`POST /customer/external/_bulk`
+
+参数：
+
+```json
+{"index":{"_id":"1"}}
+{"name":"John Doe"}
+{"index":{"_id":"2"}}
+{"name":"John Doe"}
+```
+
+2. **对所有索引执行批量操作**
+
+接口：`POST /_bulk`
+
+参数：
+
+```
+{"delete":{"_index":"website","_type":"blog","_id":"123"}}
+{"create":{"_index":"website","_type":"blog","_id":"123"}}
+{"title":"my first blog post"}
+{"index":{"_index":"website","_type":"blog"}}
+{"title":"my second blog post"}
+{"update":{"_index":"website","_type":"blog","_id":"123"}}
+{"doc":{"title":"my updated blog post"}}
+```
+
+- 这里的批量操作，当发生某一条执行发生失败时，其他的数据仍然能够接着执行，也就是说彼此之间是独立的。
+
+- bulk api以此按顺序执行所有的action（动作）。如果一个单个的动作因任何原因失败，它将继续处理它后面剩余的动作。
+
+- 当bulk api返回时，它将提供每个动作的状态（与发送的顺序相同），所以您可以检查是否一个指定的动作是否失败了。
+
+
+
+#### Elasticsearch-检索进阶
+
+导入样本测试数据；百度官网自行查找
+
+语雀：https://www.yuque.com/docs/share/467684e1-83bc-475d-b063-9224483e738a?#（密码：mxta）
+
+```json
+POST bank/account/_bulk
+测试数据
+```
+
+##### 检索示例介绍
+
+**请求接口**
+
+```json
+GET /bank/_search
+{
+  "query": {
+    "match_all": {}
+  },
+  "sort": [
+    {
+      "account_number": "asc"
+    }
+  ]
+}
+# query 查询条件
+# sort 排序条件
+
+GET bank/_search?q=*&sort=account_number:asc
+# q=* 查询所有
+# sort=account_number:asc 按照account_number进行升序排列
+```
+
+ES支持两种基本方式检索:
+
+- 通过REST request uri 发送搜索参数 （uri +检索参数）；
+- 通过REST request body 来发送它们（uri+请求体）；
+
+##### Query DSL
+
+###### 基本语法格式
+
+```json
+GET bank/_search
+{
+  "query": {
+    "match_all": {}
+  },
+  "from": 0,
+  "size": 5,
+  "sort": [
+    {
+      "account_number": {
+        "order": "desc"
+      },
+      "balance": {
+        "order": "asc"
+      }
+    }
+  ],
+  "_source": ["balance","firstname"]
+}
+# match_all 查询类型【代表查询所有的所有】，es中可以在query中组合非常多的查询类型完成复杂查询；
+# from+size 限定，完成分页功能；从第几条数据开始，每页有多少数据
+# sort 排序，多字段排序，会在前序字段相等时后续字段内部排序，否则以前序为准；
+# _source 指定返回结果中包含的字段名
+```
+
+###### match-匹配查询
+
+```json
+GET bank/_search
+{
+  "query": {
+    "match": {
+      "account_number": 20
+    }
+  }
+}
+# 查找匹配 account_number 为 20 的数据 非文本推荐使用 term
+
+GET bank/_search
+{
+  "query": {
+    "match": {
+      "address": "mill lane"
+    }
+  }
+}
+# 查找匹配 address 包含 mill 或 lane 的数据
+
+GET bank/_search
+{
+  "query": {
+    "match": {
+      "address.keyword": "288 Mill Street"
+    }
+  }
+}
+# 查找 address 为 288 Mill Street 的数据。
+# 这里的查找是精确查找，只有完全匹配时才会查找出存在的记录，
+# 如果想模糊查询应该使用match_phrase 短语匹配
+```
+
+###### match_phrase-短语匹配
+
+将需要匹配的值当成一整个单词（不分词）进行检索
+
+```json
+GET bank/_search
+{
+  "query": {
+    "match_phrase": {
+      "address": "mill lane"
+    }
+  }
+}
+# 这里会检索 address 匹配包含短语 mill lane 的数据
+```
+
+###### multi_math-多字段匹配
+
+```json
+GET bank/_search
+{
+  "query": {
+    "multi_match": {
+      "query": "mill",
+      "fields": [
+        "city",
+        "address"
+      ]
+    }
+  }
+}
+# 检索 city 或 address 匹配包含 mill 的数据，会对查询条件分词
+```
+
+###### bool-复合查询
+
+复合语句可以合并，任何其他查询语句，包括符合语句。这也就意味着，复合语句之间
+
+可以互相嵌套，可以表达非常复杂的逻辑。
+
+- must：必须达到must所列举的所有条件
+- must_not，必须不匹配must_not所列举的所有条件。
+- should，应该满足should所列举的条件。
+
+```json
+GET bank/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {"match": {
+          "gender": "M"
+        }},{"match": {
+          "address": "mill"
+        }}
+      ],
+      "must_not": [
+        {"match": {
+          "age": "28"
+        }}
+      ],
+      "should": [
+        {"match": {
+          "lastname": "Hines"
+        }}
+      ]
+    }
+  }
+}
+# 查询 gender 为 M 且 address 包含 mill 的数据
+```
+
+###### filter-结果过滤
+
+并不是所有的查询都需要产生分数，特别是哪些仅用于filtering过滤的文档。为了不计算分数，elasticsearch会自动检查场景并且优化查询的执行。
+
+filter 对结果进行过滤，且不计算相关性得分。
+
+```json
+GET bank/_search
+{
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "match": {
+            "address": "mill"
+          }
+        }
+      ],
+      "filter": {
+        "range": {
+          "balance": {
+            "gte": "10000",
+            "lte": "20000"
+          }
+        }
+      }
+    }
+  }
+}
+# 这里先是查询所有匹配 address 包含 mill 的文档，
+# 然后再根据 10000<=balance<=20000 进行过滤查询结果
+```
+
+###### term-精确检索
+
+Elasticsearch 官方对于这种非文本字段，使用 term来精确检索是一个推荐的选择。
+
+```json
+GET bank/_search
+{
+  "query": {
+    "term": {
+      "age": "28"
+    }
+  }
+}
+# 查找 age 为 28 的数据
+```
+
+###### Aggregation-执行聚合
+
+https://www.elastic.co/guide/en/elasticsearch/reference/7.11/search-aggregations.html
+
+**聚合语法**
+
+```json
+GET /my-index-000001/_search
+{
+  "aggs":{
+    "aggs_name":{ # 这次聚合的名字，方便展示在结果集中
+        "AGG_TYPE":{ # 聚合的类型(avg,term,terms)
+        } 
+     }
+  }
+}
+```
+
+**示例1-搜索address中包含mill的所有人的年龄分布以及平均年龄**
+
+```json
+GET bank/_search
+{
+  "query": {
+    "match": {
+      "address": "Mill"
+    }
+  },
+  "aggs": {
+    "ageAgg": {
+      "terms": {
+        "field": "age",
+        "size": 10
+      }
+    },
+    "ageAvg": {
+      "avg": {
+        "field": "age"
+      }
+    },
+    "balanceAvg": {
+      "avg": {
+        "field": "balance"
+      }
+    }
+  },
+  "size": 0
+}
+# "ageAgg": {             --- 聚合名为 ageAgg
+#   "terms": {            --- 聚合类型为 term
+#     "field": "age",     --- 聚合字段为 age
+#     "size": 10          --- 取聚合后前十个数据
+#   }
+# },
+# ------------------------
+# "ageAvg": {             --- 聚合名为 ageAvg
+#   "avg": {              --- 聚合类型为 avg 求平均值
+#     "field": "age"      --- 聚合字段为 age
+#   }
+# },
+# ------------------------
+# "balanceAvg": {         --- 聚合名为 balanceAvg
+#   "avg": {              --- 聚合类型为 avg 求平均值
+#     "field": "balance"  --- 聚合字段为 balance
+#   }
+# }
+# ------------------------
+# "size": 0               --- 不显示命中结果，只看聚合信息
+```
+
+**示例2-按照年龄聚合，并且求这些年龄段的这些人的平均薪资**
+
+```json
+GET bank/_search
+{
+  "query": {
+    "match_all": {}
+  },
+  "aggs": {
+    "ageAgg": {
+      "terms": {
+        "field": "age",
+        "size": 100
+      },
+      "aggs": {
+        "ageAvg": {
+          "avg": {
+            "field": "balance"
+          }
+        }
+      }
+    }
+  },
+  "size": 0
+}
+```
+
+**示例3-查出所有年龄分布，并且这些年龄段中M的平均薪资和F的平均薪资以及这个年龄段的总体平均薪资**
+
+```json
+GET bank/_search
+{
+  "query": {
+    "match_all": {}
+  },
+  "aggs": {
+    "ageAgg": {
+      "terms": {
+        "field": "age",
+        "size": 100
+      },
+      "aggs": {
+        "genderAgg": {
+          "terms": {
+            "field": "gender.keyword"
+          },
+          "aggs": {
+            "balanceAvg": {
+              "avg": {
+                "field": "balance"
+              }
+            }
+          }
+        },
+        "ageBalanceAvg": {
+          "avg": {
+            "field": "balance"
+          }
+        }
+      }
+    }
+  },
+  "size": 0
+}
+# "field": "gender.keyword" gender是txt没法聚合 必须加.keyword精确替代
+```
+
+###### Mapping-映射
+
+https://www.elastic.co/guide/en/elasticsearch/reference/7.11/mapping.html
+
+**创建索引映射**
+
+创建索引并指定属性的映射规则（相当于新建表并指定字段和字段类型）
+
+```json
+PUT /my_index
+{
+  "mappings": {
+    "properties": {
+      "age": {
+        "type": "integer"
+      },
+      "email": {
+        "type": "keyword"
+      },
+      "name": {
+        "type": "text"
+      }
+    }
+  }
+}
+```
+
+**给已有映射增加字段**
+
+```json
+PUT /my_index/_mapping
+{
+  "properties": {
+    "employee-id": {
+      "type": "keyword",
+      "index": false
+    }
+  }
+}
+
+# 这里的 "index": false，表明新增的字段不能被检索。默认是true
+```
+
+**查看映射**
+
+```json
+GET /my_index/_mapping
+# 查看某一个字段的映射
+GET /my_index/_mapping/field/employee-id
+```
+
+**更新映射**
+
+> 对于已经存在的字段映射，我们不能更新。更新必须创建新的索引，进行数据迁移。
+
+**数据迁移**
+
+> 无type数据迁移
+
+```json
+POST reindex [固定写法]
+{
+  "source":{
+      "index":"twitter"
+   },
+  "dest":{
+      "index":"new_twitters"
+   }
+}
+```
+
+> 有type数据迁移
+
+```json
+POST reindex [固定写法]
+{
+  "source":{
+      "index":"twitter",
+      "twitter":"twitter"
+   },
+  "dest":{
+      "index":"new_twitters"
+   }
+}
+```
+
+**数据迁移实例**
+
+对于我们的测试数据,是包含 type 的索引 bank。
+
+现在我们创建新的索引 newbank 并修改一些字段的类型来演示当需要更新映射时的数据迁移操作。
+
+1. 查看索引 bank 当前字段映射类型
+
+```json
+GET /bank/_mapping
+```
+
+2. 创建新索引 newbank 并修改字段类型
+
+```json
+PUT /newbank
+{
+  "mappings": {
+    "properties": {
+      "account_number": {
+        "type": "long"
+      },
+      "address": {
+        "type": "text"
+      },
+      "age": {
+        "type": "integer"
+      },
+      "balance": {
+        "type": "long"
+      },
+      "city": {
+        "type": "keyword"
+      },
+      "email": {
+        "type": "keyword"
+      },
+      "employer": {
+        "type": "keyword"
+      },
+      "firstname": {
+        "type": "text"
+      },
+      "gender": {
+        "type": "keyword"
+      },
+      "lastname": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      },
+      "state": {
+        "type": "keyword"
+      }
+    }
+  }
+}
+```
+
+
+
+3. 数据迁移
+
+```json
+POST _reindex
+{
+  "source": {
+    "index": "bank",
+    "type": "account"
+  },
+  "dest": {
+    "index": "newbank"
+  }
+}
+```
+
+4. 查看迁移后的数据
+
+```json
+GET /newbank/_search
+```
+
+#### Elasticsearch-分词
+
+https://www.elastic.co/guide/en/elasticsearch/reference/7.x/analysis.html
+
+```json
+POST _analyze
+{
+  "analyzer": "standard",
+  "text": "The 2 QUICK Brown-Foxes jumped over the lazy dog's bone."
+}
+```
+
+默认的分词器一般都是针对于英文，对于中文我们需要安装额外的分词器来进行分词。
+
+##### 安装IK分词器
+
+事前准备：
+
+- IK 分词器属于 Elasticsearch 的插件，所以 IK 分词器的安装目录是 Elasticsearch 的 plugins 目录，在我们使用Docker启动 Elasticsearch 时，已经将该目录挂载到主机的 `/mydata/elasticsearch/plugins` 目录。
+- IK 分词器的版本需要跟 Elasticsearch 的版本对应，当前选择的版本为 `7.4.2`，下载地址为：[Github Release](https://github.com/medcl/elasticsearch-analysis-ik/releases/tag/v7.4.2) 或访问：[镜像地址](https://hub.fastgit.org/medcl/elasticsearch-analysis-ik/releases/tag/v7.4.2)
+
+```bash
+# 进入挂载的插件目录 /mydata/elasticsearch/plugins
+cd /mydata/elasticsearch/plugins
+
+# 安装 wget 下载工具
+ yum install -y wget
+
+# 下载对应版本的 IK 分词器（这里是7.4.2）
+wget https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.4.2/elasticsearch-analysis-ik-7.4.2.zip
+
+# 解压到 plugins 目录下的 ik 目录
+unzip elasticsearch-analysis-ik-7.4.2.zip -d ik
+
+# 修改文件夹访问权限
+chmod -R 777 ik/
+
+# 进入 es 容器内部
+docker exec -it elasticsearch /bin/bash
+# 进入 es bin 目录
+cd /usr/share/elasticsearch/bin
+
+# 执行查看命令  显示 ik
+elasticsearch-plugin list
+
+# 退出容器
+exit
+
+# 重启 Elasticsearch
+docker restart elasticsearch
+```
+
+**测试 ik 分词器**
+
+```json
+GET my_index/_analyze
+{
+   "analyzer": "ik_max_word", 
+   "text":"蔡徐坤"
+}
+```
+
+这里对于默认词库中没有的词，不会有词语的组合，所以我们可以通过配置自定义词库或远程词库来实现对词库的扩展。
+
+##### 自定义扩展分词库
+
+nginx 中自定义分词文件
+
+echo "蔡徐坤" > /mydata/nginx/html/fenci.txt
+
+如果想要增加新的词语，只需要在该文件追加新的行并保存新的词语即可。
+
+打开并编辑 ik 插件配置文件
+vim /mydata/elasticsearch/plugins/ik/config/IKAnalyzer.cfg.xml
+
+修改远程扩展字典
+
+重启 elasticsearch 容器
+
+#### Elasticsearch-项目整合

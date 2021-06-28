@@ -30,3 +30,12 @@ slmgr /ato
 
 @echo off
 start "" "C:\Program Files\Tencent\QQ\Bin\QQScLauncher.exe"
+
+### 命令
+
+```cmd
+winver # 检查windows版本
+write # 写字板
+
+```
+
